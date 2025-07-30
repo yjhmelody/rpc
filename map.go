@@ -50,7 +50,11 @@ type serviceMap struct {
 }
 
 // register adds a new service using reflection to extract its methods.
-func (m *serviceMap) register(rcvr interface{}, name string, passReq bool) error {
+func (m *serviceMap) register(rcvr interface{}, name string, passReq bool, f func(method string) string) error {
+	if f == nil {
+		f = func(method string) string { return method }
+	}
+
 	// Setup service.
 	s := &service{
 		name:     name,
@@ -73,6 +77,7 @@ func (m *serviceMap) register(rcvr interface{}, name string, passReq bool) error
 	for i := 0; i < s.rcvrType.NumMethod(); i++ {
 		method := s.rcvrType.Method(i)
 		mtype := method.Type
+		methodName := f(method.Name)
 
 		// offset the parameter indexes by one if the
 		// service methods accept an HTTP request pointer
@@ -117,7 +122,7 @@ func (m *serviceMap) register(rcvr interface{}, name string, passReq bool) error
 		if returnType := mtype.Out(0); returnType != typeOfError {
 			continue
 		}
-		s.methods[method.Name] = &serviceMethod{
+		s.methods[methodName] = &serviceMethod{
 			method:    method,
 			argsType:  args.Elem(),
 			replyType: reply.Elem(),

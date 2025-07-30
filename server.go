@@ -99,7 +99,28 @@ func (s *Server) RegisterCodec(codec Codec, contentType string) {
 //
 // All other methods are ignored.
 func (s *Server) RegisterService(receiver interface{}, name string) error {
-	return s.services.register(receiver, name, true)
+	return s.services.register(receiver, name, true, nil)
+}
+
+// RegisterService adds a new service to the server.
+//
+// The name parameter is optional: if empty it will be inferred from
+// the receiver type name.
+// The methodF function is optional: it is used to transform the method name
+//
+// Methods from the receiver will be extracted if these rules are satisfied:
+//
+//   - The receiver is exported (begins with an upper case letter) or local
+//     (defined in the package registering the service).
+//   - The method name is exported.
+//   - The method has three arguments: *http.Request, *args, *reply.
+//   - All three arguments are pointers.
+//   - The second and third arguments are exported or local.
+//   - The method has return type error.
+//
+// All other methods are ignored.
+func (s *Server) RegisterServiceWithMethod(receiver interface{}, name string, methodF func(method string) string) error {
+	return s.services.register(receiver, name, true, methodF)
 }
 
 // RegisterTCPService adds a new TCP service to the server.
@@ -120,7 +141,7 @@ func (s *Server) RegisterService(receiver interface{}, name string) error {
 //
 // All other methods are ignored.
 func (s *Server) RegisterTCPService(receiver interface{}, name string) error {
-	return s.services.register(receiver, name, false)
+	return s.services.register(receiver, name, false, nil)
 }
 
 // HasMethod returns true if the given method is registered.
@@ -277,4 +298,11 @@ func (s *Server) writeError(w http.ResponseWriter, status int, msg string) {
 			StatusCode: status,
 		})
 	}
+}
+
+func LowerFirstLetter(method string) string {
+	if len(method) == 0 {
+		return method
+	}
+	return strings.ToLower(method[:1]) + method[1:]
 }

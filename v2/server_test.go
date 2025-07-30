@@ -36,11 +36,20 @@ func (t *Service1) Multiply(r *http.Request, req *Service1Request, res *Service1
 type Service2 struct {
 }
 
+type Service3 struct {
+}
+
+func (t *Service3) Multiply(r *http.Request, req *Service1Request, res *Service1Response) error {
+	res.Result = req.A * req.B
+	return nil
+}
+
 func TestRegisterService(t *testing.T) {
 	var err error
 	s := NewServer()
 	service1 := new(Service1)
 	service2 := new(Service2)
+	service3 := new(Service3)
 
 	// Inferred name.
 	err = s.RegisterService(service1, "")
@@ -56,6 +65,11 @@ func TestRegisterService(t *testing.T) {
 	err = s.RegisterService(service2, "")
 	if err == nil {
 		t.Errorf("Expected error on service2")
+	}
+
+	err = s.RegisterServiceWithMethod(service3, "", LowerFirstLetter)
+	if err != nil || !s.HasMethod("Service3.multiply") {
+		t.Errorf("Expected to be registered: Service3.multiply")
 	}
 }
 
