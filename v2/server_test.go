@@ -59,6 +59,52 @@ func TestRegisterService(t *testing.T) {
 	}
 }
 
+func TestRegisterServiceWithSlash(t *testing.T) {
+	var err error
+	s := NewServer().SetConcatStyle("/")
+	service1 := new(Service1)
+	service2 := new(Service2)
+
+	// Inferred name.
+	err = s.RegisterService(service1, "")
+	if err != nil || !s.HasMethod("Service1/Multiply") {
+		t.Errorf("Expected to be registered: Service1/Multiply")
+	}
+	// Provided name.
+	err = s.RegisterService(service1, "Foo")
+	if err != nil || !s.HasMethod("Foo/Multiply") {
+		t.Errorf("Expected to be registered: Foo/Multiply")
+	}
+	// No methods.
+	err = s.RegisterService(service2, "")
+	if err == nil {
+		t.Errorf("Expected error on service2")
+	}
+}
+
+func TestRegisterServiceWithUnderline(t *testing.T) {
+	var err error
+	s := NewServer().SetConcatStyle("_")
+	service1 := new(Service1)
+	service2 := new(Service2)
+
+	// Inferred name.
+	err = s.RegisterService(service1, "")
+	if err != nil || !s.HasMethod("Service1_Multiply") {
+		t.Errorf("Expected to be registered: Service1_Multiply")
+	}
+	// Provided name.
+	err = s.RegisterService(service1, "Foo")
+	if err != nil || !s.HasMethod("Foo_Multiply") {
+		t.Errorf("Expected to be registered: Foo_Multiply")
+	}
+	// No methods.
+	err = s.RegisterService(service2, "")
+	if err == nil {
+		t.Errorf("Expected error on service2")
+	}
+}
+
 // MockCodec decodes to Service1.Multiply.
 type MockCodec struct {
 	A, B int
